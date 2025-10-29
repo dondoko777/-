@@ -8,7 +8,7 @@ import { getAiResponse } from './services/geminiService';
 import type { ChatMessage as ChatMessageType } from './types';
 
 export default function App() {
-  const { appointments, addAppointment, deleteAppointment, listAppointments } = useSchedule();
+  const { appointments, addAppointment, deleteAppointment, listAppointments, setReminder } = useSchedule();
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -37,10 +37,11 @@ export default function App() {
         let resultMessage = '';
 
         if (fc.name === 'add_appointment') {
-          const { title, date, time } = fc.args;
-          const newApp = addAppointment(title, date, time);
+          const { title, date, time, reminderMinutes } = fc.args;
+          const newApp = addAppointment(title, date, time, reminderMinutes);
           functionResult = newApp;
-          resultMessage = `Added appointment "${title}" on ${date} at ${time}.`;
+          let reminderText = reminderMinutes ? ` with a reminder ${reminderMinutes} minutes before` : '';
+          resultMessage = `Added appointment "${title}" on ${date} at ${time}${reminderText}. The ID for this appointment is ${newApp.id}.`;
         } else if (fc.name === 'delete_appointment') {
           const { id } = fc.args;
           const success = deleteAppointment(id);
@@ -50,6 +51,16 @@ export default function App() {
           const apps = listAppointments();
           functionResult = apps;
           resultMessage = apps.length > 0 ? `Here are your appointments.` : `You have no appointments.`;
+        } else if (fc.name === 'set_reminder') {
+            const { id, reminderMinutes } = fc.args;
+            const updatedApp = setReminder(id, reminderMinutes);
+            if (updatedApp) {
+                functionResult = updatedApp;
+                resultMessage = `OK. I've set a reminder for "${updatedApp.title}" to go off ${reminderMinutes} minutes before the scheduled time.`;
+            } else {
+                functionResult = { success: false, error: 'Appointment not found' };
+                resultMessage = `Sorry, I couldn't find an appointment with ID ${id}.`;
+            }
         } else {
             functionResult = { error: 'Unknown function' };
             resultMessage = `Sorry, I don't know how to do that.`;
@@ -78,7 +89,7 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [addAppointment, deleteAppointment, listAppointments]);
+  }, [addAppointment, deleteAppointment, listAppointments, setReminder]);
 
   const handleSend = (message: string) => {
     const newHistory: ChatMessageType[] = [...chatHistory, { role: 'user', content: message }];

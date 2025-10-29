@@ -4,6 +4,7 @@ export interface Appointment {
   title: string;
   date: string;
   time: string;
+  reminderMinutes?: number;
 }
 
 export interface ChatMessage {
