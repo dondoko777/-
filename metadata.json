@@ -1,0 +1,5 @@
+{
+  "name": "AI Schedule Assistant",
+  "description": "A chat-based application that allows you to add, delete, and view your schedule using natural language. Your schedule is saved locally in your browser.",
+  "requestFramePermissions": []
+}
